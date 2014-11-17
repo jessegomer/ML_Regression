@@ -20,7 +20,9 @@ def time_xhat_y(rows, cols, informative):
     return time_function(lambda a,b: np.dot(a, b), xhat, data[1])
 
 def update(old, xhat, delta):
-    return old + xhat.dot(delta)
+    nonzy = np.nonzero(delta)[0]
+    new = old + xhat[:,nonzy].dot(delta[nonzy])
+    return new
 
 def time_naive_update(rows, cols, informative, num_new):
     data = datasets.make_regression(n_features=cols, n_samples=rows, n_informative=informative)
