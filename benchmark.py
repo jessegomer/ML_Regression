@@ -1,4 +1,4 @@
-#jesse gomer, cs545 machine learning group
+#cs545 machine learning group
 import timeit
 import numpy as np
 from scipy import linalg
@@ -14,23 +14,26 @@ def time_function(f, *args):
         results.append((end - start)*1000)
     return {'median': np.median(results), 'best':min(results)}
 
-def time_xhat_y(rows, cols, informative):
-    data = datasets.make_regression(n_features=cols, n_samples=rows, n_informative=informative)
-    xhat = linalg.pinv2(data[0])
-    return time_function(lambda a,b: np.dot(a, b), xhat, data[1])
+def make_beta(xhat, y):
+    return xhat.dot(y)
 
-def update(old, xhat, delta):
+
+
+def naive_update(old, xhat, delta):
+    return old + xhat.dot(delta)
+
+
+def update_with_nonzero(old, xhat, delta):
     nonzy = np.nonzero(delta)[0]
     new = old + xhat[:,nonzy].dot(delta[nonzy])
     return new
 
-def time_naive_update(rows, cols, informative, num_new):
-    data = datasets.make_regression(n_features=cols, n_samples=rows, n_informative=informative)
-    xhat = linalg.pinv2(data[0])
-    old = xhat.dot(data[1])
-    delta = np.concatenate((np.random.rand(num_new), np.zeros((rows - num_new))))
-    return time_function(update, old, xhat, delta)
-
+def make_delta(num_new, total_rows):
+    head = np.random.rand(num_new)*100
+    tail = np.zeros(total_rows - num_new)
+    delta = np.concatenate((head, tail))
+    np.random.shuffle(delta)
+    return delta
 
 cols = 100
 informative = 100
@@ -40,7 +43,17 @@ rows = 100
 
 print "number of columns:", cols
 while rows <= 1000000:
-    xhat_time = time_xhat_y(rows, cols, informative)
-    update_time = time_naive_update(rows, cols, informative, int(rows*ratio_new))
-    print "rows: {}\t\txhat*y: {}\t\tnaive update: {}".format(rows, xhat_time["best"], update_time["best"])
+    #make the data and calculate parameters
+    data = datasets.make_regression(n_features=cols, n_samples=rows, n_informative=informative)
+    num_new = int(ratio_new * rows)
+    xhat = linalg.pinv2(data[0])
+    delta = make_delta(num_new, rows)
+    old = xhat.dot(data[1])
+
+   #run the tests
+    make_beta_time = time_function(make_beta, xhat, data[1])
+    update_time = time_function(update_with_nonzero, old, xhat, delta)
+
+    print "rows: {}\t\txhat*y: {}\t\tupdate w/nonzero: {}".format(rows, make_beta_time["best"], update_time["best"])
+
     rows *= 10
