@@ -17,11 +17,8 @@ def time_function(f, *args):
 def make_beta(xhat, y):
     return xhat.dot(y)
 
-
-
 def naive_update(old, xhat, delta):
     return old + xhat.dot(delta)
-
 
 def update_with_nonzero(old, xhat, delta):
     nonzy = np.nonzero(delta)[0]
@@ -34,6 +31,10 @@ def make_delta(num_new, total_rows):
     delta = np.concatenate((head, tail))
     np.random.shuffle(delta)
     return delta
+
+def predict_y(beta, features):
+    return features.dot(beta)
+
 
 cols = 100
 informative = 100
@@ -53,7 +54,9 @@ while rows <= 1000000:
    #run the tests
     make_beta_time = time_function(make_beta, xhat, data[1])
     update_time = time_function(update_with_nonzero, old, xhat, delta)
+    predict_y_time = time_function(predict_y, old, data[0])
 
-    print "rows: {}\t\txhat*y: {}\t\tupdate w/nonzero: {}".format(rows, make_beta_time["best"], update_time["best"])
+    print "rows: {}\t\txhat*y: {}\t\tupdate: {}\t\tpredict: {}".format(rows, make_beta_time["best"], update_time["best"],
+                                                                       predict_y_time['best'])
 
     rows *= 10
